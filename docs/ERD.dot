@@ -1,0 +1,86 @@
+digraph ERD {
+    rankdir=TB;
+    node [shape=none, fontname="Helvetica Neue", fontsize=11];
+    edge [fontname="Helvetica Neue", fontsize=10, color="#666666"];
+    
+    // 테이블 스타일 정의
+    users [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="6" bgcolor="#f8f9fa">
+            <tr><td colspan="2" bgcolor="#4a90e2" align="center"><font color="white"><b>users</b></font></td></tr>
+            <tr><td align="left">id</td><td align="left">BIGINT PK</td></tr>
+            <tr><td align="left">email</td><td align="left">VARCHAR(255) UNIQUE</td></tr>
+            <tr><td align="left">password</td><td align="left">VARCHAR(255)</td></tr>
+            <tr><td align="left">name</td><td align="left">VARCHAR(100)</td></tr>
+            <tr><td align="left">role</td><td align="left">ENUM(CREATOR, CLASSMATE)</td></tr>
+            <tr><td align="left">created_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">updated_at</td><td align="left">DATETIME</td></tr>
+        </table>
+    >];
+
+    lectures [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="6" bgcolor="#f8f9fa">
+            <tr><td colspan="2" bgcolor="#e74c3c" align="center"><font color="white"><b>lectures</b></font></td></tr>
+            <tr><td align="left">id</td><td align="left">BIGINT PK</td></tr>
+            <tr><td align="left">creator_id</td><td align="left">BIGINT FK</td></tr>
+            <tr><td align="left">title</td><td align="left">VARCHAR(255)</td></tr>
+            <tr><td align="left">description</td><td align="left">TEXT</td></tr>
+            <tr><td align="left">price</td><td align="left">DECIMAL(10,2)</td></tr>
+            <tr><td align="left">max_capacity</td><td align="left">INT</td></tr>
+            <tr><td align="left">current_count</td><td align="left">INT DEFAULT 0</td></tr>
+            <tr><td align="left">start_date</td><td align="left">DATE</td></tr>
+            <tr><td align="left">end_date</td><td align="left">DATE</td></tr>
+            <tr><td align="left">status</td><td align="left">ENUM(DRAFT, OPEN, CLOSED)</td></tr>
+            <tr><td align="left">version</td><td align="left">BIGINT DEFAULT 0</td></tr>
+            <tr><td align="left">created_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">updated_at</td><td align="left">DATETIME</td></tr>
+        </table>
+    >];
+
+    enrollments [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="6" bgcolor="#f8f9fa">
+            <tr><td colspan="2" bgcolor="#2ecc71" align="center"><font color="white"><b>enrollments</b></font></td></tr>
+            <tr><td align="left">id</td><td align="left">BIGINT PK</td></tr>
+            <tr><td align="left">user_id</td><td align="left">BIGINT FK</td></tr>
+            <tr><td align="left">lecture_id</td><td align="left">BIGINT FK</td></tr>
+            <tr><td align="left">status</td><td align="left">ENUM(PENDING, CONFIRMED, CANCELLED)</td></tr>
+            <tr><td align="left">enrolled_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">confirmed_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">cancelled_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">created_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">updated_at</td><td align="left">DATETIME</td></tr>
+        </table>
+    >];
+
+    payments [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="6" bgcolor="#f8f9fa">
+            <tr><td colspan="2" bgcolor="#f39c12" align="center"><font color="white"><b>payments</b></font></td></tr>
+            <tr><td align="left">id</td><td align="left">BIGINT PK</td></tr>
+            <tr><td align="left">enrollment_id</td><td align="left">BIGINT FK UNIQUE</td></tr>
+            <tr><td align="left">amount</td><td align="left">DECIMAL(10,2)</td></tr>
+            <tr><td align="left">status</td><td align="left">ENUM(PENDING, COMPLETED, FAILED, REFUNDED)</td></tr>
+            <tr><td align="left">paid_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">created_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">updated_at</td><td align="left">DATETIME</td></tr>
+        </table>
+    >];
+
+    waitlists [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="6" bgcolor="#f8f9fa">
+            <tr><td colspan="2" bgcolor="#9b59b6" align="center"><font color="white"><b>waitlists</b></font></td></tr>
+            <tr><td align="left">id</td><td align="left">BIGINT PK</td></tr>
+            <tr><td align="left">user_id</td><td align="left">BIGINT FK</td></tr>
+            <tr><td align="left">lecture_id</td><td align="left">BIGINT FK</td></tr>
+            <tr><td align="left">position</td><td align="left">INT</td></tr>
+            <tr><td align="left">created_at</td><td align="left">DATETIME</td></tr>
+            <tr><td align="left">updated_at</td><td align="left">DATETIME</td></tr>
+        </table>
+    >];
+
+    // 관계 정의
+    users -> lectures [label="1:N (creates)", headlabel="N", taillabel="1"];
+    users -> enrollments [label="1:N (enrolls)", headlabel="N", taillabel="1"];
+    lectures -> enrollments [label="1:N (has)", headlabel="N", taillabel="1"];
+    enrollments -> payments [label="1:1 (paid)", headlabel="1", taillabel="1", dir=both, arrowtail=none, arrowhead=none];
+    users -> waitlists [label="1:N (joins)", headlabel="N", taillabel="1"];
+    lectures -> waitlists [label="1:N (has)", headlabel="N", taillabel="1"];
+}

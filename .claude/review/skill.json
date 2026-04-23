@@ -1,0 +1,156 @@
+{
+  "name": "code-review",
+  "version": "1.0.0",
+  "description": "Code review skill for enrollment system",
+  
+  "commands": {
+    "review": {
+      "description": "Start code review",
+      "usage": "/review [file-path]",
+      "steps": [
+        "Check if file path is provided",
+        "Load appropriate review checklist based on file extension",
+        "Analyze code against checklist items",
+        "Generate review comments",
+        "Suggest improvements"
+      ]
+    },
+    
+    "review-all": {
+      "description": "Review all changed files",
+      "usage": "/review-all",
+      "steps": [
+        "Get list of changed files from git",
+        "Filter files by supported extensions",
+        "Run review on each file",
+        "Generate summary report"
+      ]
+    },
+    
+    "check-security": {
+      "description": "Security-focused code review",
+      "usage": "/check-security [file-path]",
+      "steps": [
+        "Check for hardcoded secrets",
+        "Validate input sanitization",
+        "Review authentication/authorization",
+        "Check for SQL injection vulnerabilities",
+        "Review error handling for info leakage"
+      ]
+    },
+    
+    "check-quality": {
+      "description": "Quality-focused code review",
+      "usage": "/check-quality [file-path]",
+      "steps": [
+        "Check code complexity",
+        "Review naming conventions",
+        "Check for code duplication",
+        "Review test coverage",
+        "Validate documentation"
+      ]
+    }
+  },
+  
+  "checklists": {
+    "kotlin": ".claude/review/kotlin-review-checklist.md",
+    "typescript": ".claude/review/typescript-review-checklist.md",
+    "general": ".claude/review/code-review-guide.md"
+  },
+  
+  "priority": {
+    "blocker": {
+      "color": "🔴",
+      "description": "Must fix - security, functionality, performance issues",
+      "examples": [
+        "Hardcoded secrets",
+        "SQL injection vulnerabilities",
+        "Memory leaks",
+        "Test failures"
+      ]
+    },
+    "critical": {
+      "color": "🟠",
+      "description": "Should fix - potential bugs, architecture issues",
+      "examples": [
+        "N+1 query problem",
+        "Missing error handling",
+        "Performance bottlenecks",
+        "Type safety issues"
+      ]
+    },
+    "minor": {
+      "color": "🟡",
+      "description": "Nice to fix - style, readability improvements",
+      "examples": [
+        "Variable naming",
+        "Code organization",
+        "Documentation",
+        "Minor refactoring"
+      ]
+    },
+    "nitpick": {
+      "color": "🟢",
+      "description": "Optional - personal preference, suggestions",
+      "examples": [
+        "Alternative approaches",
+        "Style preferences",
+        "Best practice suggestions"
+      ]
+    }
+  },
+  
+  "commentTemplates": {
+    "question": {
+      "prefix": "💬",
+      "template": "**Question:** {message}\n\nCould you explain why you chose this approach? I'm wondering if ~ might be an alternative worth considering."
+    },
+    "suggestion": {
+      "prefix": "💡",
+      "template": "**Suggestion:** {message}\n\n**Before:**\n```\n{before}\n```\n\n**After:**\n```\n{after}\n```"
+    },
+    "praise": {
+      "prefix": "👍",
+      "template": "**Praise:** {message}\n\nThis is a great approach! I particularly like how you handled ~."
+    },
+    "issue": {
+      "prefix": "⚠️",
+      "template": "**Issue ({priority}):** {message}\n\n**Problem:** {problem}\n\n**Recommendation:** {recommendation}"
+    }
+  },
+  
+  "reviewFlow": {
+    "preReview": [
+      "Understand PR context and requirements",
+      "Check CI/test status",
+      "Review commit messages"
+    ],
+    "duringReview": [
+      "Review file by file",
+      "Check against language-specific checklist",
+      "Look for security issues",
+      "Verify test coverage",
+      "Check documentation"
+    ],
+    "postReview": [
+      "Summarize findings",
+      "Assign priority levels",
+      "Provide actionable feedback",
+      "Approve or request changes"
+    ]
+  },
+  
+  "supportedExtensions": [
+    ".kt",
+    ".kts",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".sql",
+    ".yml",
+    ".yaml",
+    ".json",
+    ".md"
+  ]
+}

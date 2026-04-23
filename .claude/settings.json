@@ -1,0 +1,97 @@
+{
+  "ai": {
+    "enabled": true,
+    "mode": "assisted",
+    "providers": ["claude", "opencode"],
+    "rules": {
+      "development": ".claude/rules/development-principles.md",
+      "typescript": ".claude/rules/typescript-guidelines.md",
+      "kotlin": ".claude/rules/kotlin-guidelines.md"
+    }
+  },
+
+  "project": {
+    "type": "fullstack",
+    "structure": {
+      "frontend": {
+        "path": "frontend",
+        "framework": "Next.js",
+        "language": "TypeScript",
+        "port": 3000
+      },
+      "backend": {
+        "path": "backend",
+        "framework": "Spring Boot",
+        "language": "Kotlin",
+        "port": 8080
+      },
+      "database": {
+        "type": "MySQL",
+        "port": 3306
+      }
+    }
+  },
+
+  "commands": {
+    "dev": {
+      "frontend": "cd frontend && bun run dev",
+      "backend": "cd backend && ./gradlew bootRun",
+      "database": "docker-compose up -d mysql"
+    },
+    "test": {
+      "frontend": "cd frontend && bun test",
+      "backend": "cd backend && ./gradlew test",
+      "all": "bun run test:frontend && ./gradlew test"
+    },
+    "build": {
+      "frontend": "cd frontend && bun run build",
+      "backend": "cd backend && ./gradlew build",
+      "all": "bun run build:frontend && ./gradlew build"
+    },
+    "lint": {
+      "frontend": "cd frontend && bun run lint",
+      "backend": "cd backend && ./gradlew ktlintCheck"
+    },
+    "install": {
+      "frontend": "cd frontend && bun install",
+      "backend": "cd backend && ./gradlew dependencies"
+    }
+  },
+
+  "security": {
+    "envProtection": {
+      "enabled": true,
+      "script": "scripts/protect-env.sh",
+      "blockedPatterns": [
+        ".env",
+        ".env.local",
+        ".env.production",
+        "*.key",
+        "*.pem",
+        "*.p12"
+      ]
+    },
+    "checks": {
+      "preCommit": true,
+      "hardcodedSecrets": true,
+      "envInGit": true
+    }
+  },
+
+  "guidelines": {
+    "priority": [
+      "development-principles",
+      "typescript-guidelines",
+      "kotlin-guidelines"
+    ],
+    "autoCheck": true
+  },
+
+  "features": {
+    "codeCompletion": true,
+    "inlineSuggestions": true,
+    "codeReview": true,
+    "testGeneration": true,
+    "documentation": true
+  }
+}
