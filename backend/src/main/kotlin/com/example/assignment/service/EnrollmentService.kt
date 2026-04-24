@@ -7,6 +7,8 @@ import com.example.assignment.dto.enrollment.CreateEnrollmentRequest
 import com.example.assignment.dto.enrollment.EnrollmentDetailResponse
 import com.example.assignment.dto.enrollment.EnrollmentResponse
 import com.example.assignment.exception.BadRequestException
+import com.example.assignment.exception.ConflictException
+import com.example.assignment.exception.ForbiddenException
 import com.example.assignment.exception.NotFoundException
 import com.example.assignment.repository.CourseRepository
 import com.example.assignment.repository.EnrollmentRepository
@@ -42,7 +44,7 @@ class EnrollmentService(
                 .orElseThrow { NotFoundException("강의를 찾을 수 없습니다") }
 
         if (course.instructorId != instructorId) {
-            throw BadRequestException("본인의 강의만 조회할 수 있습니다")
+            throw ForbiddenException("본인의 강의만 조회할 수 있습니다")
         }
 
         return enrollmentRepository.findAllByCourseId(courseId)
@@ -77,7 +79,7 @@ class EnrollmentService(
         }
 
         if (enrollmentRepository.existsByCourseIdAndUserId(courseId, userId)) {
-            throw BadRequestException("이미 신청한 강의입니다")
+            throw ConflictException("이미 신청한 강의입니다")
         }
 
         val enrollment =
@@ -99,7 +101,7 @@ class EnrollmentService(
         val enrollment = findEnrollmentOrThrow(enrollmentId)
 
         if (enrollment.userId != userId) {
-            throw BadRequestException("본인의 신청만 확정할 수 있습니다")
+            throw ForbiddenException("본인의 신청만 확정할 수 있습니다")
         }
 
         if (enrollment.status != EnrollmentStatus.PENDING) {
@@ -134,7 +136,7 @@ class EnrollmentService(
         val enrollment = findEnrollmentOrThrow(enrollmentId)
 
         if (enrollment.userId != userId) {
-            throw BadRequestException("본인의 신청만 취소할 수 있습니다")
+            throw ForbiddenException("본인의 신청만 취소할 수 있습니다")
         }
 
         if (enrollment.status != EnrollmentStatus.CONFIRMED) {

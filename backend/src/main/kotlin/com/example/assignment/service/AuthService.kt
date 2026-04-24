@@ -7,6 +7,7 @@ import com.example.assignment.dto.auth.LoginRequest
 import com.example.assignment.dto.auth.LoginResponse
 import com.example.assignment.dto.auth.UserResponse
 import com.example.assignment.exception.BadRequestException
+import com.example.assignment.exception.ConflictException
 import com.example.assignment.exception.UnauthorizedException
 import com.example.assignment.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -58,7 +59,7 @@ class AuthService(
         role: UserRole
     ): UserResponse {
         if (userRepository.existsByEmail(email)) {
-            throw BadRequestException("이미 가입된 이메일입니다")
+            throw ConflictException("이미 가입된 이메일입니다")
         }
 
         val user =

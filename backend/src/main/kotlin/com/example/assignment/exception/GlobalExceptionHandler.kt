@@ -25,6 +25,18 @@ class GlobalExceptionHandler {
             .body(ErrorResponse(HttpStatus.UNAUTHORIZED.value(), e.message))
     }
 
+    @ExceptionHandler(ConflictException::class)
+    fun handleConflict(e: ConflictException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(HttpStatus.CONFLICT.value(), e.message))
+    }
+
+    @ExceptionHandler(ForbiddenException::class)
+    fun handleForbidden(e: ForbiddenException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ErrorResponse(HttpStatus.FORBIDDEN.value(), e.message))
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGeneral(e: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
