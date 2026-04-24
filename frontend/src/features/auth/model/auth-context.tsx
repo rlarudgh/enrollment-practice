@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { toast } from "sonner";
 import type { User, UserRole } from "@/entities/user/user.types";
 
 interface AuthContextType {
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Token expired or invalid
         localStorage.removeItem(STORAGE_KEY);
         setToken(null);
+        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.");
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -65,13 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "로그인에 실패했습니다");
+        // Show user-friendly error message
+        switch (error.code) {
+          case "INVALID_CREDENTIALS":
+            toast.error("이메일 또는 비밀번호가 올바르지 않습니다");
+            break;
+          default:
+            toast.error(error.message || "로그인에 실패했습니다");
+        }
+        throw new Error(error.message);
       }
 
       const data = await response.json();
       localStorage.setItem(STORAGE_KEY, data.token);
       setToken(data.token);
       setUser(data.user);
+      toast.success(`${data.user.name}님, 환영합니다!`);
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
     setToken(null);
     setUser(null);
+    toast.success("로그아웃되었습니다");
   };
 
   const hasRole = (role: UserRole) => user?.role === role;
