@@ -213,7 +213,7 @@ class ApiIntegrationTest {
             mockMvc.postWithAuth("/api/enrollments", body, classmateToken)
 
             mockMvc.postWithAuth("/api/enrollments", body, classmateToken)
-                .andExpect(status().isBadRequest)
+                .andExpect(status().isConflict)
         }
 
         @Test
