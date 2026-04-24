@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { EnrollmentFormData, EnrollmentType, EnrollmentResponse } from "@/entities/enrollment";
 import { EnrollmentError, errorCodeMessages, useCourse, useSubmitEnrollment } from "@/entities/enrollment";
 import { StepIndicator } from "@/features/enrollment/ui/step-indicator.ui";
@@ -10,7 +11,9 @@ import { Step3ReviewSubmit } from "@/features/enrollment/ui/step3-review-submit.
 import { SuccessScreen } from "@/features/enrollment/ui/success-screen.ui";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { AlertCircle, Shield } from "lucide-react";
+import { useAuth } from "@/features/auth/model/auth-context";
 
 const STEPS = ["강의 선택", "정보 입력", "확인 및 제출"];
 
@@ -35,6 +38,8 @@ export default function EnrollmentPage() {
 
   const { data: course } = useCourse(formData.courseId);
   const submitEnrollment = useSubmitEnrollment();
+  const { hasRole } = useAuth();
+  const router = useRouter();
 
   const handleStep1Next = (data: { courseId: string; type: EnrollmentType }) => {
     setFormData((prev) => ({
@@ -129,9 +134,24 @@ export default function EnrollmentPage() {
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">수강 신청</h1>
-        <p className="text-muted-foreground">원하는 강의를 선택하고 신청해 주세요</p>
+      <div className="mb-8">
+        <div className="flex justify-between items-start">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold mb-2">수강 신청</h1>
+            <p className="text-muted-foreground">원하는 강의를 선택하고 신청해 주세요</p>
+          </div>
+          {hasRole("CREATOR") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/admin")}
+              className="flex items-center gap-2 ml-4"
+            >
+              <Shield className="h-4 w-4" />
+              관리자
+            </Button>
+          )}
+        </div>
       </div>
 
       <StepIndicator currentStep={currentStep} totalSteps={3} stepLabels={STEPS} />
