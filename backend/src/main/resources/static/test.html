@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Tester</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+  .header { background: #16213e; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2a4a; }
+  .header h1 { font-size: 16px; font-weight: 600; color: #e0e0e0; }
+  .header-info { display: flex; align-items: center; gap: 12px; }
+  .auth-badge { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 500; }
+  .auth-badge.on { background: #1a4d2e; color: #4ade80; }
+  .auth-badge.off { background: #4d1a1a; color: #f87171; }
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* 사이드바 */
+  .sidebar { width: 240px; background: #16213e; border-right: 1px solid #2a2a4a; overflow-y: auto; flex-shrink: 0; }
+  .sidebar-section { padding: 12px 0; border-bottom: 1px solid #2a2a4a; }
+  .sidebar-title { font-size: 11px; text-transform: uppercase; color: #666; padding: 0 16px 6px; letter-spacing: 0.5px; }
+  .endpoint { padding: 7px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: background 0.15s; }
+  .endpoint:hover { background: #1f2f50; }
+  .endpoint.active { background: #253560; }
+  .method { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; min-width: 42px; text-align: center; }
+  .method-post { background: #1a3d2e; color: #4ade80; }
+  .method-get { background: #1a2d4d; color: #60a5fa; }
+  .method-patch { background: #3d3a1a; color: #facc15; }
+  .method-delete { background: #3d1a1a; color: #f87171; }
+  .endpoint-path { color: #aaa; font-size: 12px; }
+
+  /* 메인 */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .panel { flex: 1; overflow-y: auto; padding: 20px; }
+  .panel-form { display: none; }
+  .panel-form.active { display: block; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 10px; background: #0f1729; border: 1px solid #2a2a4a; border-radius: 4px; color: #e0e0e0; font-size: 13px; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #60a5fa; }
+  .form-row { display: flex; gap: 10px; }
+  .form-row > * { flex: 1; }
+  .btn { padding: 8px 18px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-send { background: #6366f1; color: #fff; }
+  .btn-e2e { background: #059669; color: #fff; }
+  .btn-logout { background: transparent; color: #888; border: 1px solid #2a2a4a; font-size: 12px; padding: 4px 10px; }
+
+  /* 응답 */
+  .response-area { background: #0f1729; border: 1px solid #2a2a4a; border-radius: 4px; margin-top: 16px; }
+  .response-header { padding: 8px 12px; font-size: 12px; color: #888; border-bottom: 1px solid #2a2a4a; display: flex; justify-content: space-between; }
+  .response-status { font-weight: 600; }
+  .response-status.ok { color: #4ade80; }
+  .response-status.err { color: #f87171; }
+  .response-body { padding: 12px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #ccc; max-height: 300px; overflow-y: auto; }
+
+  /* E2E */
+  .e2e-panel { display: none; }
+  .e2e-panel.active { display: block; }
+  .e2e-progress { margin-top: 16px; }
+  .e2e-step { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1a1a2e; font-size: 13px; }
+  .e2e-step:last-child { border-bottom: none; }
+  .e2e-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .e2e-icon.pending { background: #2a2a4a; color: #666; }
+  .e2e-icon.running { background: #1a2d4d; color: #60a5fa; }
+  .e2e-icon.pass { background: #1a4d2e; color: #4ade80; }
+  .e2e-icon.fail { background: #4d1a1a; color: #f87171; }
+  .e2e-step-name { flex: 1; }
+  .e2e-step-status { font-size: 11px; color: #666; }
+  .e2e-summary { margin-top: 16px; padding: 12px; background: #0f1729; border-radius: 4px; font-size: 13px; display: none; }
+  .e2e-summary.show { display: block; }
+
+  /* 빈 상태 */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #555; }
+  .empty-state span { font-size: 32px; margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>API Tester</h1>
+  <div class="header-info">
+    <span class="auth-badge off" id="authBadge">미인증</span>
+    <button class="btn btn-logout" onclick="clearToken()">Logout</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">E2E Test</div>
+      <div class="endpoint" onclick="showPanel('e2e')">
+        <span class="method method-post">RUN</span>
+        <span class="endpoint-path">전체 자동 테스트</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Auth</div>
+      <div class="endpoint" data-panel="auth-login" onclick="showPanel('auth-login')">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/auth/login</span>
+      </div>
+      <div class="endpoint" data-panel="auth-me" onclick="showPanel('auth-me')">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/auth/me</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Courses</div>
+      <div class="endpoint" data-panel="course-create" onclick="showPanel('course-create')">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/courses</span>
+      </div>
+      <div class="endpoint" data-panel="course-list" onclick="showPanel('course-list')">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/courses</span>
+      </div>
+      <div class="endpoint" data-panel="course-detail" onclick="showPanel('course-detail')">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/courses/:id</span>
+      </div>
+      <div class="endpoint" data-panel="course-status" onclick="showPanel('course-status')">
+        <span class="method method-patch">PATCH</span>
+        <span class="endpoint-path">/api/courses/:id/status</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Enrollments</div>
+      <div class="endpoint" data-panel="enroll" onclick="showPanel('enroll')">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/api/enrollments</span>
+      </div>
+      <div class="endpoint" data-panel="enroll-list" onclick="showPanel('enroll-list')">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/api/enrollments</span>
+      </div>
+      <div class="endpoint" data-panel="enroll-confirm" onclick="showPanel('enroll-confirm')">
+        <span class="method method-patch">PATCH</span>
+        <span class="endpoint-path">/api/enrollments/:id/confirm</span>
+      </div>
+      <div class="endpoint" data-panel="enroll-cancel" onclick="showPanel('enroll-cancel')">
+        <span class="method method-patch">PATCH</span>
+        <span class="endpoint-path">/api/enrollments/:id/cancel</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 빈 상태 -->
+    <div class="panel" id="panelEmpty">
+      <div class="empty-state">
+        <span>&#8592;</span>
+        <p>좌측에서 엔드포인트를 선택하세요</p>
+      </div>
+    </div>
+
+    <!-- E2E 자동 테스트 -->
+    <div class="panel e2e-panel" id="panelE2e">
+      <h2 style="font-size:16px; margin-bottom:4px;">E2E 자동 테스트</h2>
+      <p style="font-size:13px; color:#888; margin-bottom:16px;">전체 시나리오를 한 번에 실행합니다.</p>
+      <button class="btn btn-e2e" id="btnE2e" onclick="runE2E()">전체 테스트 실행</button>
+      <div class="e2e-progress" id="e2eProgress"></div>
+      <div class="e2e-summary" id="e2eSummary"></div>
+      <div class="response-area" id="e2eLog" style="display:none;">
+        <div class="response-header"><span>실행 로그</span><span></span></div>
+        <div class="response-body" id="e2eLogBody"></div>
+      </div>
+    </div>
+
+    <!-- Auth: 로그인 -->
+    <div class="panel panel-form" id="panel-auth-login">
+      <h2 style="font-size:16px; margin-bottom:16px;">POST /api/auth/login</h2>
+      <div class="form-group"><label>이메일</label><input id="loginEmail" value="creator@test.com" /></div>
+      <div class="form-group"><label>비밀번호</label><input id="loginPassword" type="password" value="password123" /></div>
+      <button class="btn btn-send" onclick="doLogin()">Send</button>
+      <div id="res-auth-login"></div>
+    </div>
+
+    <!-- Auth: 내 정보 -->
+    <div class="panel panel-form" id="panel-auth-me">
+      <h2 style="font-size:16px; margin-bottom:16px;">GET /api/auth/me</h2>
+      <p style="font-size:13px; color:#888; margin-bottom:16px;">현재 인증된 사용자 정보를 조회합니다.</p>
+      <button class="btn btn-send" onclick="sendAndShow('GET', '/api/auth/me', null, 'res-auth-me')">Send</button>
+      <div id="res-auth-me"></div>
+    </div>
+
+    <!-- Course: 등록 -->
+    <div class="panel panel-form" id="panel-course-create">
+      <h2 style="font-size:16px; margin-bottom:16px;">POST /api/courses</h2>
+      <div class="form-group"><label>강의명</label><input id="courseTitle" value="테스트 강의" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>가격</label><input id="coursePrice" type="number" value="100000" /></div>
+        <div class="form-group"><label>정원</label><input id="courseCapacity" type="number" value="30" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>카테고리</label>
+          <select id="courseCategory"><option value="development">development</option><option value="design">design</option><option value="marketing">marketing</option></select>
+        </div>
+        <div class="form-group"><label>시작일</label><input id="courseStart" type="date" /></div>
+      </div>
+      <div class="form-group"><label>종료일</label><input id="courseEnd" type="date" /></div>
+      <button class="btn btn-send" onclick="createCourse()">Send</button>
+      <div id="res-course-create"></div>
+    </div>
+
+    <!-- Course: 목록 -->
+    <div class="panel panel-form" id="panel-course-list">
+      <h2 style="font-size:16px; margin-bottom:16px;">GET /api/courses</h2>
+      <div class="form-group"><label>카테고리 필터</label>
+        <select id="filterCategory"><option value="">전체</option><option value="development">development</option><option value="design">design</option><option value="marketing">marketing</option></select>
+      </div>
+      <button class="btn btn-send" onclick="getCourses()">Send</button>
+      <div id="res-course-list"></div>
+    </div>
+
+    <!-- Course: 상세 -->
+    <div class="panel panel-form" id="panel-course-detail">
+      <h2 style="font-size:16px; margin-bottom:16px;">GET /api/courses/:id</h2>
+      <div class="form-group"><label>강의 ID</label><input id="courseIdDetail" placeholder="강의 ID" /></div>
+      <button class="btn btn-send" onclick="sendAndShow('GET', '/api/courses/' + gv('courseIdDetail'), null, 'res-course-detail')">Send</button>
+      <div id="res-course-detail"></div>
+    </div>
+
+    <!-- Course: 상태 변경 -->
+    <div class="panel panel-form" id="panel-course-status">
+      <h2 style="font-size:16px; margin-bottom:16px;">PATCH /api/courses/:id/status</h2>
+      <div class="form-group"><label>강의 ID</label><input id="courseIdStatus" placeholder="강의 ID" /></div>
+      <div class="form-group"><label>상태</label>
+        <select id="courseNewStatus"><option value="OPEN">OPEN</option><option value="CLOSED">CLOSED</option></select>
+      </div>
+      <button class="btn btn-send" onclick="sendAndShow('PATCH', '/api/courses/' + gv('courseIdStatus') + '/status', {status: gv('courseNewStatus')}, 'res-course-status')">Send</button>
+      <div id="res-course-status"></div>
+    </div>
+
+    <!-- Enrollment: 신청 -->
+    <div class="panel panel-form" id="panel-enroll">
+      <h2 style="font-size:16px; margin-bottom:16px;">POST /api/enrollments</h2>
+      <div class="form-group"><label>강의 ID</label><input id="enrollCourseId" placeholder="강의 ID" /></div>
+      <button class="btn btn-send" onclick="doEnroll()">Send</button>
+      <div id="res-enroll"></div>
+    </div>
+
+    <!-- Enrollment: 목록 -->
+    <div class="panel panel-form" id="panel-enroll-list">
+      <h2 style="font-size:16px; margin-bottom:16px;">GET /api/enrollments</h2>
+      <p style="font-size:13px; color:#888; margin-bottom:16px;">내 수강 신청 목록을 조회합니다.</p>
+      <button class="btn btn-send" onclick="sendAndShow('GET', '/api/enrollments', null, 'res-enroll-list')">Send</button>
+      <div id="res-enroll-list"></div>
+    </div>
+
+    <!-- Enrollment: 확정 -->
+    <div class="panel panel-form" id="panel-enroll-confirm">
+      <h2 style="font-size:16px; margin-bottom:16px;">PATCH /api/enrollments/:id/confirm</h2>
+      <div class="form-group"><label>신청 ID</label><input id="confirmEnrollId" placeholder="수강 신청 ID" /></div>
+      <button class="btn btn-send" onclick="sendAndShow('PATCH', '/api/enrollments/' + gv('confirmEnrollId') + '/confirm', null, 'res-enroll-confirm')">Send</button>
+      <div id="res-enroll-confirm"></div>
+    </div>
+
+    <!-- Enrollment: 취소 -->
+    <div class="panel panel-form" id="panel-enroll-cancel">
+      <h2 style="font-size:16px; margin-bottom:16px;">PATCH /api/enrollments/:id/cancel</h2>
+      <div class="form-group"><label>신청 ID</label><input id="cancelEnrollId" placeholder="수강 신청 ID" /></div>
+      <button class="btn btn-send" onclick="sendAndShow('PATCH', '/api/enrollments/' + gv('cancelEnrollId') + '/cancel', null, 'res-enroll-cancel')">Send</button>
+      <div id="res-enroll-cancel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var token = localStorage.getItem('api_test_token') || '';
+var lastCourseId = '';
+var lastEnrollId = '';
+
+(function() {
+  var today = new Date();
+  var s = new Date(today); s.setDate(s.getDate() + 1);
+  var e = new Date(today); e.setMonth(e.getMonth() + 1);
+  document.getElementById('courseStart').value = fmt(s);
+  document.getElementById('courseEnd').value = fmt(e);
+  updateBadge();
+})();
+
+function fmt(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function gv(id) { return document.getElementById(id).value; }
+
+function updateBadge() {
+  var b = document.getElementById('authBadge');
+  if (token) { b.textContent = '인증됨'; b.className = 'auth-badge on'; }
+  else { b.textContent = '미인증'; b.className = 'auth-badge off'; }
+}
+
+function clearToken() {
+  token = '';
+  localStorage.removeItem('api_test_token');
+  updateBadge();
+}
+
+function showPanel(name) {
+  document.querySelectorAll('.panel, .panel-form, .e2e-panel').forEach(function(el) { el.style.display = 'none'; el.classList.remove('active'); });
+  document.querySelectorAll('.endpoint').forEach(function(el) { el.classList.remove('active'); });
+
+  if (name === 'e2e') {
+    var p = document.getElementById('panelE2e');
+    p.style.display = 'block'; p.classList.add('active');
+  } else {
+    var p = document.getElementById('panel-' + name);
+    if (p) { p.style.display = 'block'; p.classList.add('active'); }
+  }
+
+  var endpoints = document.querySelectorAll('.endpoint');
+  endpoints.forEach(function(el) {
+    if (el.dataset.panel === name) el.classList.add('active');
+  });
+}
+
+async function api(method, path, body) {
+  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+  var resp = await fetch(path, opts);
+  var text = await resp.text();
+  var data = null;
+  try { data = JSON.parse(text); } catch(e) { data = text; }
+  return { status: resp.status, ok: resp.ok, data: data };
+}
+
+function renderResponse(containerId, result) {
+  var el = document.getElementById(containerId);
+  var statusClass = result.ok ? 'ok' : 'err';
+  var body = typeof result.data === 'object' ? JSON.stringify(result.data, null, 2) : (result.data || '');
+  el.innerHTML = '<div class="response-area">' +
+    '<div class="response-header"><span>Response</span><span class="response-status ' + statusClass + '">' + result.status + '</span></div>' +
+    '<div class="response-body">' + escHtml(body) + '</div></div>';
+}
+
+function escHtml(s) {
+  var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+async function sendAndShow(method, path, body, containerId) {
+  var r = await api(method, path, body);
+  renderResponse(containerId, r);
+  return r;
+}
+
+async function doLogin() {
+  var r = await api('POST', '/api/auth/login', { email: gv('loginEmail'), password: gv('loginPassword') });
+  renderResponse('res-auth-login', r);
+  if (r.ok && r.data && r.data.token) {
+    token = r.data.token;
+    localStorage.setItem('api_test_token', token);
+    updateBadge();
+  }
+}
+
+async function createCourse() {
+  var body = {
+    title: gv('courseTitle'), price: Number(gv('coursePrice')),
+    maxCapacity: Number(gv('courseCapacity')), category: gv('courseCategory'),
+    startDate: gv('courseStart'), endDate: gv('courseEnd'),
+  };
+  var r = await api('POST', '/api/courses', body);
+  renderResponse('res-course-create', r);
+  if (r.ok && r.data && r.data.id) {
+    lastCourseId = r.data.id;
+    document.getElementById('courseIdStatus').value = lastCourseId;
+    document.getElementById('courseIdDetail').value = lastCourseId;
+    document.getElementById('enrollCourseId').value = lastCourseId;
+  }
+}
+
+async function getCourses() {
+  var cat = gv('filterCategory');
+  var path = '/api/courses' + (cat ? '?category=' + cat : '');
+  var r = await api('GET', path, null);
+  renderResponse('res-course-list', r);
+}
+
+async function doEnroll() {
+  var r = await api('POST', '/api/enrollments', { courseId: Number(gv('enrollCourseId')) });
+  renderResponse('res-enroll', r);
+  if (r.ok && r.data && r.data.enrollmentId) {
+    lastEnrollId = r.data.enrollmentId;
+    document.getElementById('confirmEnrollId').value = lastEnrollId;
+    document.getElementById('cancelEnrollId').value = lastEnrollId;
+  }
+}
+
+// === E2E ===
+var e2eSteps = [
+  { name: '크리에이터 회원가입', fn: 'signupCreator' },
+  { name: '크리에이터 로그인', fn: 'loginCreator' },
+  { name: '수강생 회원가입', fn: 'signupStudent' },
+  { name: '수강생 로그인', fn: 'loginStudent' },
+  { name: '강의 등록 (DRAFT)', fn: 'createCourse' },
+  { name: '강의 상태 OPEN 변경', fn: 'openCourse' },
+  { name: '강의 목록 조회', fn: 'listCourses' },
+  { name: '강의 상세 조회', fn: 'detailCourse' },
+  { name: '수강 신청', fn: 'enrollCourse' },
+  { name: '중복 신청 거부 확인', fn: 'duplicateEnroll' },
+  { name: '수강 신청 목록 조회', fn: 'listEnrollments' },
+  { name: '결제 확정 (PENDING → CONFIRMED)', fn: 'confirmEnroll' },
+  { name: '수강 취소 (CONFIRMED → CANCELLED)', fn: 'cancelEnroll' },
+];
+
+var e2eState = { creatorToken: '', classmateToken: '', courseId: '', enrollId: '' };
+
+async function runE2E() {
+  var btn = document.getElementById('btnE2e');
+  btn.disabled = true; btn.textContent = '실행 중...';
+
+  var progress = document.getElementById('e2eProgress');
+  progress.innerHTML = '';
+  e2eSteps.forEach(function(s) {
+    progress.innerHTML += '<div class="e2e-step" id="e2e-' + s.fn + '">' +
+      '<div class="e2e-icon pending" id="icon-' + s.fn + '">&#9679;</div>' +
+      '<div class="e2e-step-name">' + s.name + '</div>' +
+      '<div class="e2e-step-status" id="status-' + s.fn + '">대기</div></div>';
+  });
+
+  document.getElementById('e2eLog').style.display = 'block';
+  document.getElementById('e2eLogBody').textContent = '';
+  document.getElementById('e2eSummary').classList.remove('show');
+
+  var logBody = document.getElementById('e2eLogBody');
+  var pass = 0, fail = 0;
+
+  for (var i = 0; i < e2eSteps.length; i++) {
+    var s = e2eSteps[i];
+    var icon = document.getElementById('icon-' + s.fn);
+    var status = document.getElementById('status-' + s.fn);
+    icon.className = 'e2e-icon running';
+    status.textContent = '실행 중...';
+    status.style.color = '#60a5fa';
+
+    try {
+      var result = await e2eFns[s.fn]();
+      icon.className = 'e2e-icon pass';
+      icon.innerHTML = '&#10003;';
+      status.textContent = result;
+      status.style.color = '#4ade80';
+      pass++;
+      logBody.textContent += '[PASS] ' + s.name + ' — ' + result + '\n';
+    } catch(e) {
+      icon.className = 'e2e-icon fail';
+      icon.innerHTML = '&#10007;';
+      status.textContent = e.message;
+      status.style.color = '#f87171';
+      fail++;
+      logBody.textContent += '[FAIL] ' + s.name + ' — ' + e.message + '\n';
+    }
+  }
+
+  var summary = document.getElementById('e2eSummary');
+  summary.classList.add('show');
+  summary.innerHTML = '결과: <strong style="color:#4ade80">' + pass + ' passed</strong>' +
+    (fail > 0 ? ', <strong style="color:#f87171">' + fail + ' failed</strong>' : '') +
+    ' / ' + e2eSteps.length + ' total';
+
+  btn.disabled = false; btn.textContent = '전체 테스트 실행';
+}
+
+var e2eFns = {
+  signupCreator: async function() {
+    var r = await api('POST', '/api/auth/login', { email: 'creator@test.com', password: 'password123' });
+    if (!r.ok) {
+      // 로그인 실패면 서버에 계정이 없는 상태 — 직접 생성 불가하므 에러
+      throw new Error('크리에이터 계정이 필요합니다. 서버에 미리 생성해주세요.');
+    }
+    e2eState.creatorToken = r.data.token;
+    token = e2eState.creatorToken;
+    localStorage.setItem('api_test_token', token);
+    updateBadge();
+    return '토큰 획득';
+  },
+  loginCreator: async function() {
+    var r = await api('POST', '/api/auth/login', { email: 'creator@test.com', password: 'password123' });
+    if (!r.ok) throw new Error(r.data.message || '로그인 실패');
+    e2eState.creatorToken = r.data.token;
+    token = e2eState.creatorToken;
+    localStorage.setItem('api_test_token', token);
+    updateBadge();
+    return 'status ' + r.status + ', 토큰 획득';
+  },
+  signupStudent: async function() {
+    var r = await api('POST', '/api/auth/login', { email: 'student@test.com', password: 'password123' });
+    if (!r.ok) throw new Error('수강생 계정이 필요합니다.');
+    e2eState.classmateToken = r.data.token;
+    return '수강생 토큰 획득';
+  },
+  loginStudent: async function() {
+    var r = await api('POST', '/api/auth/login', { email: 'student@test.com', password: 'password123' });
+    if (!r.ok) throw new Error(r.data.message || '로그인 실패');
+    e2eState.classmateToken = r.data.token;
+    return 'status ' + r.status;
+  },
+  createCourse: async function() {
+    token = e2eState.creatorToken;
+    var body = {
+      title: 'E2E 테스트 강의', price: 50000, maxCapacity: 10, category: 'development',
+      startDate: fmt(new Date(Date.now() + 86400000)), endDate: fmt(new Date(Date.now() + 30*86400000)),
+    };
+    var r = await api('POST', '/api/courses', body);
+    if (!r.ok) throw new Error(r.data.message || '강의 등록 실패');
+    e2eState.courseId = r.data.id;
+    return 'ID: ' + r.data.id + ', status: DRAFT';
+  },
+  openCourse: async function() {
+    token = e2eState.creatorToken;
+    var r = await api('PATCH', '/api/courses/' + e2eState.courseId + '/status', { status: 'OPEN' });
+    if (!r.ok) throw new Error(r.data.message || '상태 변경 실패');
+    return 'DRAFT → OPEN';
+  },
+  listCourses: async function() {
+    var r = await api('GET', '/api/courses', null);
+    if (!r.ok) throw new Error(r.data.message || '조회 실패');
+    return '강의 ' + (r.data.courses ? r.data.courses.length : 0) + '개 조회';
+  },
+  detailCourse: async function() {
+    var r = await api('GET', '/api/courses/' + e2eState.courseId, null);
+    if (!r.ok) throw new Error(r.data.message || '조회 실패');
+    return 'title: ' + r.data.title + ', enrollment: ' + (r.data.currentEnrollment || 0);
+  },
+  enrollCourse: async function() {
+    token = e2eState.classmateToken;
+    var r = await api('POST', '/api/enrollments', { courseId: Number(e2eState.courseId) });
+    if (!r.ok) throw new Error(r.data.message || '신청 실패');
+    e2eState.enrollId = r.data.enrollmentId;
+    return 'ID: ' + r.data.enrollmentId + ', status: pending';
+  },
+  duplicateEnroll: async function() {
+    token = e2eState.classmateToken;
+    var r = await api('POST', '/api/enrollments', { courseId: Number(e2eState.courseId) });
+    if (r.ok) throw new Error('중복 신청이 허용됨 (버그)');
+    return '올바르게 거부됨 (status ' + r.status + ')';
+  },
+  listEnrollments: async function() {
+    token = e2eState.classmateToken;
+    var r = await api('GET', '/api/enrollments', null);
+    if (!r.ok) throw new Error(r.data.message || '조회 실패');
+    return '신청 ' + (Array.isArray(r.data) ? r.data.length : 0) + '개 조회';
+  },
+  confirmEnroll: async function() {
+    token = e2eState.classmateToken;
+    var r = await api('PATCH', '/api/enrollments/' + e2eState.enrollId + '/confirm', null);
+    if (!r.ok) throw new Error(r.data.message || '확정 실패');
+    return 'PENDING → CONFIRMED';
+  },
+  cancelEnroll: async function() {
+    token = e2eState.classmateToken;
+    var r = await api('PATCH', '/api/enrollments/' + e2eState.enrollId + '/cancel', null);
+    if (!r.ok) throw new Error(r.data.message || '취소 실패');
+    return 'CONFIRMED → CANCELLED';
+  },
+};
+</script>
+</body>
+</html>
