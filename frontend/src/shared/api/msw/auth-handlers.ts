@@ -1,5 +1,5 @@
+import type { AuthError, LoginRequest, LoginResponse, User } from "@/entities/user/user.types";
 import { http, HttpResponse, delay } from "msw";
-import type { User, LoginRequest, LoginResponse, AuthError } from "@/entities/user/user.types";
 
 // Mock users
 const users: User[] = [
@@ -29,7 +29,7 @@ export const authHandlers = [
   http.post("/api/auth/login", async ({ request }) => {
     await delay(800);
 
-    const body = await request.json() as LoginRequest;
+    const body = (await request.json()) as LoginRequest;
     const { email, password } = body;
 
     // Simple validation
@@ -45,7 +45,10 @@ export const authHandlers = [
 
     if (!user) {
       return HttpResponse.json(
-        { code: "INVALID_CREDENTIALS", message: "이메일 또는 비밀번호가 올바르지 않습니다" } as AuthError,
+        {
+          code: "INVALID_CREDENTIALS",
+          message: "이메일 또는 비밀번호가 올바르지 않습니다",
+        } as AuthError,
         { status: 401 }
       );
     }

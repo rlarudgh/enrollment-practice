@@ -1,11 +1,11 @@
-import { http, HttpResponse, delay } from "msw";
-import type { 
-  Course, 
-  CourseListResponse, 
-  EnrollmentRequest, 
-  EnrollmentResponse, 
-  ErrorResponse 
+import type {
+  Course,
+  CourseListResponse,
+  EnrollmentRequest,
+  EnrollmentResponse,
+  ErrorResponse,
 } from "@/entities/enrollment";
+import { http, HttpResponse, delay } from "msw";
 
 const categories = ["development", "design", "marketing", "business"];
 
@@ -120,8 +120,8 @@ const courses: Course[] = [
 const enrollments = new Set<string>();
 
 function createErrorResponse(
-  code: ErrorResponse["code"], 
-  message: string, 
+  code: ErrorResponse["code"],
+  message: string,
   details?: Record<string, string>
 ): ErrorResponse {
   return { code, message, details };
@@ -178,67 +178,64 @@ export const handlers = [
   // Get all courses
   http.get("/api/courses", async ({ request }) => {
     await delay(800);
-    
+
     const url = new URL(request.url);
     const category = url.searchParams.get("category");
-    
+
     let filteredCourses = courses;
     if (category && category !== "all") {
       filteredCourses = courses.filter((c) => c.category === category);
     }
-    
+
     const response: CourseListResponse = {
       courses: filteredCourses,
       categories,
     };
-    
+
     return HttpResponse.json(response);
   }),
 
   // Get course by ID
   http.get("/api/courses/:id", async ({ params }) => {
     await delay(300);
-    
+
     const course = courses.find((c) => c.id === params.id);
-    
+
     if (!course) {
-      return HttpResponse.json(
-        createErrorResponse("COURSE_NOT_FOUND", "강의를 찾을 수 없습니다"),
-        { status: 404 }
-      );
+      return HttpResponse.json(createErrorResponse("COURSE_NOT_FOUND", "강의를 찾을 수 없습니다"), {
+        status: 404,
+      });
     }
-    
+
     return HttpResponse.json(course);
   }),
 
   // Create enrollment
   http.post("/api/enrollments", async ({ request }) => {
     await delay(1500);
-    
-    const body = await request.json() as EnrollmentRequest;
+
+    const body = (await request.json()) as EnrollmentRequest;
     const course = courses.find((c) => c.id === body.courseId);
-    
+
     if (!course) {
-      return HttpResponse.json(
-        createErrorResponse("COURSE_NOT_FOUND", "강의를 찾을 수 없습니다"),
-        { status: 404 }
-      );
+      return HttpResponse.json(createErrorResponse("COURSE_NOT_FOUND", "강의를 찾을 수 없습니다"), {
+        status: 404,
+      });
     }
-    
+
     // 1. Validate input
     const validationError = validateEnrollmentRequest(body);
     if (validationError) {
       return HttpResponse.json(validationError, { status: 400 });
     }
-    
+
     // 2. Check capacity
     if (course.currentEnrollment >= course.maxCapacity) {
-      return HttpResponse.json(
-        createErrorResponse("COURSE_FULL", "정원이 초과되었습니다"),
-        { status: 400 }
-      );
+      return HttpResponse.json(createErrorResponse("COURSE_FULL", "정원이 초과되었습니다"), {
+        status: 400,
+      });
     }
-    
+
     // 3. Check duplicate enrollment (by email)
     const enrollmentKey = `${body.applicant.email}:${body.courseId}`;
     if (enrollments.has(enrollmentKey)) {
@@ -247,17 +244,20 @@ export const handlers = [
         { status: 409 }
       );
     }
-    
+
     // Success: Save enrollment and update capacity
     enrollments.add(enrollmentKey);
     course.currentEnrollment += 1;
-    
+
     const response: EnrollmentResponse = {
       enrollmentId: `ENR-${Date.now()}`,
       status: "confirmed",
       enrolledAt: new Date().toISOString(),
     };
-    
+
     return HttpResponse.json(response, { status: 201 });
   }),
 ];
+
+// Export combined handlers
+export { authHandlers } from "./auth-handlers";

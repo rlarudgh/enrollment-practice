@@ -70,11 +70,11 @@ export function toEnrollmentRequest(formData: EnrollmentFormData): EnrollmentReq
       agreedToTerms: formData.agreedToTerms,
     };
   }
-  
+
   if (!formData.group) {
     throw new Error("Group data is required for group enrollment");
   }
-  
+
   return {
     courseId: formData.courseId,
     type: "group",

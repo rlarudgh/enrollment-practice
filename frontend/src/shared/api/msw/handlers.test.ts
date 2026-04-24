@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { setupServer } from "msw/node";
-import { handlers } from "./handlers";
 import type { EnrollmentRequest, ErrorResponse } from "@/entities/enrollment";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { handlers } from "./handlers";
 
 const server = setupServer(...handlers);
 
@@ -51,7 +51,7 @@ describe("MSW Handlers", () => {
 
     it("should return 404 for non-existent course", async () => {
       const response = await fetch("/api/courses/nonexistent");
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(404);
       expect(data.code).toBe("COURSE_NOT_FOUND");
@@ -120,13 +120,13 @@ describe("MSW Handlers", () => {
 
     it("should return COURSE_NOT_FOUND for non-existent course", async () => {
       const request = { ...validPersonalRequest, courseId: "nonexistent" };
-      
+
       const response = await fetch("/api/enrollments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(404);
       expect(data.code).toBe("COURSE_NOT_FOUND");
@@ -147,7 +147,7 @@ describe("MSW Handlers", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidRequest),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(400);
       expect(data.code).toBe("INVALID_INPUT");
@@ -170,7 +170,7 @@ describe("MSW Handlers", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidRequest),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(400);
       expect(data.code).toBe("INVALID_INPUT");
@@ -180,7 +180,7 @@ describe("MSW Handlers", () => {
     it("should return COURSE_FULL when capacity exceeded", async () => {
       // Use course-7 which has small capacity (maxCapacity: 20, currentEnrollment: 5)
       const fullCourseId = "course-7";
-      
+
       // Make 15 successful enrollments to fill the course (parallel requests)
       const enrollmentPromises = [];
       for (let i = 0; i < 15; i++) {
@@ -214,7 +214,7 @@ describe("MSW Handlers", () => {
           },
         }),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(400);
       expect(data.code).toBe("COURSE_FULL");
@@ -234,7 +234,7 @@ describe("MSW Handlers", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPersonalRequest),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(409);
       expect(data.code).toBe("DUPLICATE_ENROLLMENT");
@@ -264,7 +264,7 @@ describe("MSW Handlers", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidGroupRequest),
       });
-      const data = await response.json() as ErrorResponse;
+      const data = (await response.json()) as ErrorResponse;
 
       expect(response.status).toBe(400);
       expect(data.code).toBe("INVALID_INPUT");
