@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
     @ExceptionHandler(NotFoundException::class)
     fun handleNotFound(e: NotFoundException): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -18,6 +17,12 @@ class GlobalExceptionHandler {
     fun handleBadRequest(e: BadRequestException): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.message))
+    }
+
+    @ExceptionHandler(UnauthorizedException::class)
+    fun handleUnauthorized(e: UnauthorizedException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ErrorResponse(HttpStatus.UNAUTHORIZED.value(), e.message))
     }
 
     @ExceptionHandler(Exception::class)
