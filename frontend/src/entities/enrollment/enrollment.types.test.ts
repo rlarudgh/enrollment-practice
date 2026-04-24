@@ -1,9 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { 
-  toEnrollmentRequest, 
-  EnrollmentError, 
-  errorCodeMessages 
-} from "./enrollment.types";
+import { describe, expect, it } from "vitest";
+import { EnrollmentError, errorCodeMessages, toEnrollmentRequest } from "./enrollment.types";
 import type { EnrollmentFormData } from "./enrollment.types";
 
 describe("toEnrollmentRequest", () => {
@@ -33,7 +29,7 @@ describe("toEnrollmentRequest", () => {
 
   it("should not include motivation in request", () => {
     const request = toEnrollmentRequest(baseFormData);
-    
+
     // motivation은 선택사항이므로 request에 포함될 수도 있고 안될 수도 있음
     // 여기서는 타입 검증만
     expect(request.applicant).toBeDefined();
@@ -80,7 +76,7 @@ describe("toEnrollmentRequest", () => {
 
   it("should maintain discriminated union type safety", () => {
     const personalRequest = toEnrollmentRequest(baseFormData);
-    
+
     // Type narrowing
     if (personalRequest.type === "personal") {
       expect(personalRequest.type).toBe("personal");
@@ -103,7 +99,7 @@ describe("toEnrollmentRequest", () => {
     };
 
     const groupRequest = toEnrollmentRequest(groupFormData);
-    
+
     if (groupRequest.type === "group") {
       expect(groupRequest.type).toBe("group");
       expect(groupRequest.group).toBeDefined();
@@ -113,11 +109,9 @@ describe("toEnrollmentRequest", () => {
 
 describe("EnrollmentError", () => {
   it("should create error with code, message and details", () => {
-    const error = new EnrollmentError(
-      "INVALID_INPUT",
-      "입력값을 확인해 주세요",
-      { "applicant.name": "이름을 입력해주세요" }
-    );
+    const error = new EnrollmentError("INVALID_INPUT", "입력값을 확인해 주세요", {
+      "applicant.name": "이름을 입력해주세요",
+    });
 
     expect(error.code).toBe("INVALID_INPUT");
     expect(error.message).toBe("입력값을 확인해 주세요");
@@ -126,10 +120,7 @@ describe("EnrollmentError", () => {
   });
 
   it("should create error without details", () => {
-    const error = new EnrollmentError(
-      "COURSE_FULL",
-      "정원이 초과되었습니다"
-    );
+    const error = new EnrollmentError("COURSE_FULL", "정원이 초과되었습니다");
 
     expect(error.code).toBe("COURSE_FULL");
     expect(error.message).toBe("정원이 초과되었습니다");
@@ -138,7 +129,7 @@ describe("EnrollmentError", () => {
 
   it("should work with instanceof", () => {
     const error = new EnrollmentError("COURSE_NOT_FOUND", "강의를 찾을 수 없습니다");
-    
+
     expect(error instanceof EnrollmentError).toBe(true);
     expect(error instanceof Error).toBe(true);
   });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 
 interface UseFormOptions<T> {
@@ -94,34 +94,38 @@ export function useForm<T extends Record<string, unknown>>(
     []
   );
 
-  const validateField = useCallback((field: keyof T): boolean => {
-    if (!schema) return true;
+  const validateField = useCallback(
+    (field: keyof T): boolean => {
+      if (!schema) return true;
 
-    try {
-      const fieldSchema = schema instanceof z.ZodObject
-        ? (schema as z.ZodObject<Record<string, z.ZodType<unknown>>>).shape[field as string]
-        : null;
+      try {
+        const fieldSchema =
+          schema instanceof z.ZodObject
+            ? (schema as z.ZodObject<Record<string, z.ZodType<unknown>>>).shape[field as string]
+            : null;
 
-      if (!fieldSchema) return true;
+        if (!fieldSchema) return true;
 
-      const value = formStateRef.current.values[field];
-      fieldSchema.parse(value);
-      
-      setFormState((prev) => {
-        const newErrors = { ...prev.errors };
-        delete newErrors[field];
-        return { ...prev, errors: newErrors };
-      });
+        const value = formStateRef.current.values[field];
+        fieldSchema.parse(value);
 
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const message = error.errors[0]?.message || "Invalid value";
-        setError(field, message);
+        setFormState((prev) => {
+          const newErrors = { ...prev.errors };
+          delete newErrors[field];
+          return { ...prev, errors: newErrors };
+        });
+
+        return true;
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const message = error.errors[0]?.message || "Invalid value";
+          setError(field, message);
+        }
+        return false;
       }
-      return false;
-    }
-  }, [schema, setError]);
+    },
+    [schema, setError]
+  );
 
   const validate = useCallback((): boolean => {
     if (!schema) {

@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import { setupServer } from "msw/node";
 import type { ReactNode } from "react";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { handlers } from "../../shared/api/msw/handlers";
-import { 
-  useCourses, 
-  useCourse, 
+import {
+  toEnrollmentRequest,
+  useCourse,
+  useCourses,
   useSubmitEnrollment,
-  toEnrollmentRequest 
 } from "./enrollment.queries";
 import type { EnrollmentFormData } from "./enrollment.types";
 
@@ -25,11 +25,7 @@ function createWrapper() {
   });
 
   return function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 }
 
@@ -74,13 +70,10 @@ describe("useCourses", () => {
 
   it("should cache data with correct query key", async () => {
     const wrapper = createWrapper();
-    const { result, rerender } = renderHook(
-      ({ category }) => useCourses(category),
-      { 
-        wrapper, 
-        initialProps: { category: undefined as string | undefined }
-      }
-    );
+    const { result, rerender } = renderHook(({ category }) => useCourses(category), {
+      wrapper,
+      initialProps: { category: undefined as string | undefined },
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const firstData = result.current.data;
@@ -195,17 +188,17 @@ describe("useSubmitEnrollment", () => {
     // Second submission with same email
     const { result: result2 } = renderHook(() => useSubmitEnrollment(), { wrapper });
     result2.current.mutate(data);
-    
+
     await waitFor(() => expect(result2.current.isError).toBe(true));
     expect(result2.current.error?.message).toContain("이미 신청한 강의입니다");
   });
 
   it("should handle course full error", async () => {
     const wrapper = createWrapper();
-    
+
     // Fill up course-3 (capacity: 20)
     const { result: fillResult } = renderHook(() => useSubmitEnrollment(), { wrapper });
-    
+
     for (let i = 0; i < 12; i++) {
       fillResult.current.mutate({
         courseId: "course-3",
@@ -217,7 +210,9 @@ describe("useSubmitEnrollment", () => {
         },
         agreedToTerms: true,
       });
-      await waitFor(() => expect(fillResult.current.isSuccess || fillResult.current.isError).toBe(true));
+      await waitFor(() =>
+        expect(fillResult.current.isSuccess || fillResult.current.isError).toBe(true)
+      );
     }
 
     // Try to enroll in full course
