@@ -55,7 +55,91 @@ docker compose up -d
 | `DB_PASSWORD` | MySQL 비밀번호 | `password` |
 | `JWT_SECRET` | JWT 서명 키 | `change-me-in-production` |
 
-## ERD
+## 데이터 모델 설명
+
+### Entity (도메인 모델)
+
+#### User (사용자)
+```kotlin
+@Entity
+@Table(name = "users")
+class User(
+    val id: Long?,                    // PK
+    val email: String,                // Unique, 로그인용
+    val name: String,                 // 이름
+    val password: String,             // BCrypt 암호화
+    val role: UserRole,               // CREATOR, CLASSMATE
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
+)
+```
+
+**UserRole Enum**:
+- `CREATOR`: 크리에이터 (강사) - 강의 개설, 수강생 관리
+- `CLASSMATE`: 클래스메이트 (수강생) - 강의 신청
+
+#### Course (강의)
+```kotlin
+@Entity
+@Table(name = "courses")
+class Course(
+    val id: Long?,                    // PK
+    val title: String,                // 강의 제목
+    val description: String,          // 설명
+    val price: Int,                   // 가격 (원)
+    val maxCapacity: Int,             // 정원
+    val status: CourseStatus,         // DRAFT, OPEN, CLOSED
+    val startDate: LocalDate,         // 시작일
+    val endDate: LocalDate,           // 종료일
+    val instructorId: Long,           // 강사 ID (FK → User)
+    val category: String,             // 카테고리
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
+)
+```
+
+**CourseStatus Enum**:
+- `DRAFT`: 초안 (신청 불가)
+- `OPEN`: 모집 중 (신청 가능)
+- `CLOSED`: 모집 마감 (신청 불가)
+
+#### Enrollment (수강 신청)
+```kotlin
+@Entity
+@Table(
+    name = "enrollments",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_user_course", columnNames = ["user_id", "course_id"])
+    ]
+)
+class Enrollment(
+    val id: Long?,                    // PK
+    val userId: Long,                 // FK → User
+    val courseId: Long,               // FK → Course
+    val status: EnrollmentStatus,     // PENDING, CONFIRMED, CANCELLED
+    val enrolledAt: LocalDateTime,    // 신청일시
+    val confirmedAt: LocalDateTime?,  // 확정일시
+    val cancelledAt: LocalDateTime?,  // 취소일시
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
+)
+```
+
+**EnrollmentStatus Enum**:
+- `PENDING`: 대기 (결제 대기)
+- `CONFIRMED`: 확정 (결제 완료)
+- `CANCELLED`: 취소
+
+### 관계 정의
+
+| 관계 | 설명 |
+|------|------|
+| User ← Course | 1:N (한 명의 강사는 여러 강의 개설) |
+| User ← Enrollment | 1:N (한 명의 사용자는 여러 신청) |
+| Course ← Enrollment | 1:N (한 강의는 여러 신청) |
+| User + Course → Enrollment | N:1 (중복 신청 방지: UNIQUE 제약) |
+
+### ERD
 
 ```
 ┌──────────────────────┐       ┌─────────────────────────────┐
@@ -125,9 +209,107 @@ com.example.assignment/
     └── CustomExceptions.kt
 ```
 
-## API 명세
+## API 목록 및 예시
 
-### 인증 (Auth)
+상세한 API 명세는 [docs/API.md](docs/API.md)를 참고하세요.
+
+### 인증 API (`/api/auth`)
+
+| 엔드포인트 | 메서드 | 설명 | 인증 |
+|------------|--------|------|------|
+| `/api/auth/signup` | POST | 회원가입 | ❌ |
+| `/api/auth/login` | POST | 로그인 (토큰 발급) | ❌ |
+| `/api/auth/me` | GET | 내 정보 조회 | ✅ |
+| `/api/auth/logout` | POST | 로그아웃 | ✅ |
+
+**로그인 예시**:
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "classmate@test.com",
+    "password": "password123"
+  }'
+```
+
+**응답**:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "1",
+    "email": "classmate@test.com",
+    "name": "클래스메이트",
+    "role": "CLASSMATE"
+  }
+}
+```
+
+---
+
+### 강의 API (`/api/courses`)
+
+| 엔드포인트 | 메서드 | 설명 | 인증 |
+|------------|--------|------|------|
+| `/api/courses` | GET | 강의 목록 조회 | ❌ |
+| `/api/courses/{id}` | GET | 강의 상세 조회 | ❌ |
+| `/api/courses` | POST | 강의 생성 | ✅ (CREATOR) |
+| `/api/courses/{id}/status` | PATCH | 강의 상태 변경 | ✅ (본인만) |
+| `/api/courses/{id}/enrollments` | GET | 강의별 수강생 목록 | ✅ (본인만) |
+
+**강의 목록 조회 예시**:
+```bash
+curl -X GET "http://localhost:8080/api/courses?status=OPEN&category=development"
+```
+
+---
+
+### 수강 신청 API (`/api/enrollments`)
+
+| 엔드포인트 | 메서드 | 설명 | 인증 |
+|------------|--------|------|------|
+| `/api/enrollments` | GET | 내 수강 신청 목록 | ✅ |
+| `/api/enrollments` | POST | 수강 신청 | ✅ |
+| `/api/enrollments/{id}/confirm` | PATCH | 결제 확정 | ✅ (본인만) |
+| `/api/enrollments/{id}/cancel` | PATCH | 수강 취소 | ✅ (본인만) |
+
+**수강 신청 예시**:
+```bash
+curl -X POST http://localhost:8080/api/enrollments \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"courseId": 1}'
+```
+
+---
+
+### 에러 코드
+
+| 코드 | HTTP Status | 설명 |
+|------|-------------|------|
+| `INVALID_CREDENTIALS` | 401 | 이메일 또는 비밀번호 불일치 |
+| `UNAUTHORIZED` | 401 | 인증되지 않음 |
+| `FORBIDDEN` | 403 | 권한 없음 |
+| `NOT_FOUND` | 404 | 리소스를 찾을 수 없음 |
+| `COURSE_FULL` | 400 | 정원 초과 |
+| `DUPLICATE_ENROLLMENT` | 409 | 이미 신청한 강의 |
+
+---
+
+## 상세 문서
+
+백엔드 아키텍처, API 명세, 개발 가이드, 보안 등 상세 문서는 [docs/](docs/)를 참고하세요.
+
+| 문서 | 설명 |
+|------|------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 계층형 아키텍처, ERD, API 설계, 동시성 제어 |
+| [API.md](docs/API.md) | REST API 명세, 요청/응답 예시, 에러 코드 |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | 개발 환경 설정, 빌드, 테스트, 디버깅 |
+| [SECURITY.md](docs/SECURITY.md) | JWT, Spring Security, 권한 제어, 보안 조치 |
+| [SEQUENCE_DIAGRAMS.md](docs/SEQUENCE_DIAGRAMS.md) | 시퀀스 다이어그램 (인증, 수강신청, 동시성제어) |
+| [INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) | 인프라 구조, 배포 전략, 모니터링, CI/CD |
+
+---
 
 #### POST /api/auth/login
 
@@ -351,19 +533,71 @@ com.example.assignment/
 
 요구사항에는 없지만 프론트엔드에서 이미 카테고리 필터를 사용하고 있어 추가했습니다.
 
-## 테스트
+## 테스트 실행 방법
 
-### 통합 테스트 (ApiIntegrationTest)
+### 1. 전체 테스트 실행
 
-`@SpringBootTest` + `@AutoConfigureMockMvc` + H2 인메모리 DB. MySQL 없이 실행.
+```bash
+./gradlew test --no-daemon
+```
 
-| 그룹 | 테스트 수 | 내용 |
-|------|-----------|------|
-| 인증 API | 4개 | 로그인 성공/실패, 내 정보 조회, 토큰 없이 접근 |
-| 강의 관리 API | 5개 | 등록, 목록, 카테고리 필터, 상태 전환, 상세 조회 |
-| 수강 신청 API | 8개 | 신청, 중복 방지, 확정, 취소, 정원 초과, 정원 복원, DRAFT 신청 불가 |
+**설명**: 모든 테스트 케이스 실행 (H2 인메모리 DB 사용)
 
-`@BeforeEach` 에서 DB 초기화 후 크리에이터/수강생 계정을 생성하여 각 테스트가 독립적으로 실행됩니다.
+### 2. 특정 테스트 실행
+
+```bash
+# 특정 테스트 클래스
+./gradlew test --tests "EnrollmentServiceTest" --no-daemon
+
+# 특정 테스트 메서드 (Spock 스타일)
+./gradlew test --tests "EnrollmentServiceTest.정원_초과_시_신청_실패" --no-daemon
+```
+
+### 3. 테스트 커버리지 확인
+
+```bash
+./gradlew test jacocoTestReport --no-daemon
+open build/reports/jacoco/test/html/index.html
+```
+
+### 4. 코드 스타일 검사
+
+```bash
+./gradlew ktlintCheck --no-daemon      # 검사만
+./gradlew ktlintFormat --no-daemon     # 자동 수정
+```
+
+### 테스트 구조
+
+| 테스트 클래스 | 테스트 수 | 설명 |
+|---------------|-----------|------|
+| `AuthControllerTest` | 4개 | 로그인 성공/실패, 내 정보 조회, 토큰 없이 접근 |
+| `CourseControllerTest` | 5개 | 등록, 목록, 카테고리 필터, 상태 전환, 상세 조회 |
+| `EnrollmentControllerTest` | 8개 | 신청, 중복 방지, 확정, 취소, 정원 초과, 정원 복원 |
+
+**테스트 설정**:
+- `@SpringBootTest`: 전체 애플리케이션 컨텍스트 로드
+- `@AutoConfigureMockMvc`: MockMvc 사용
+- H2 인메모리 DB: MySQL 없이 테스트 가능
+- `@BeforeEach`: 각 테스트 전 DB 초기화
+
+### 테스트 시나리오
+
+**정원 초과 동시성 테스트**:
+```
+1. 30명 정원 강의 생성
+2. 31명이 동시에 신청 시도
+3. 30명은 성공, 1명은 실패 (정원 초과 에러)
+```
+
+**중복 신청 방지 테스트**:
+```
+1. 같은 사용자가 같은 강의에 2번 신청
+2. 첫 번째는 성공
+3. 두 번째는 409 Conflict 에러
+```
+
+---
 
 ## 제약사항
 
