@@ -10,7 +10,7 @@ import javax.crypto.SecretKey
 
 @Component
 class JwtTokenProvider(
-    @Value("\${jwt.secret:myDefaultSecretKeyForDevelopmentAtLeast256BitsLong!!}")
+    @Value("\${jwt.secret}") // 환경변수 필수, 기본값 없음
     private val secret: String,
     @Value("\${jwt.expiration:86400000}")
     private val expiration: Long,
