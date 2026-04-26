@@ -1,21 +1,9 @@
 import type { AuthError, LoginRequest, LoginResponse, User } from "@/entities/user/user.types";
 import { http, HttpResponse, delay } from "msw";
+import usersData from "./mock-data/users.json";
 
 // Mock users
-const users: User[] = [
-  {
-    id: "user-1",
-    email: "creator@test.com",
-    name: "크리에이터",
-    role: "CREATOR",
-  },
-  {
-    id: "user-2",
-    email: "student@test.com",
-    name: "수강생",
-    role: "CLASSMATE",
-  },
-];
+const users = usersData.users as User[];
 
 // Simple token storage (in-memory)
 const tokens = new Map<string, User>();
@@ -78,7 +66,13 @@ export const authHandlers = [
       );
     }
 
-    const user = tokens.get(token)!;
+    const user = tokens.get(token);
+    if (!user) {
+      return HttpResponse.json(
+        { code: "UNAUTHORIZED", message: "로그인이 필요합니다" } as AuthError,
+        { status: 401 }
+      );
+    }
     return HttpResponse.json({ user });
   }),
 

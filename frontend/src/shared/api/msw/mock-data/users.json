@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "user-1",
+      "email": "creator@test.com",
+      "name": "크리에이터",
+      "role": "CREATOR"
+    },
+    {
+      "id": "user-2",
+      "email": "student@test.com",
+      "name": "수강생",
+      "role": "CLASSMATE"
+    }
+  ]
+}

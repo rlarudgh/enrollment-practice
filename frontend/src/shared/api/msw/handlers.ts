@@ -6,115 +6,12 @@ import type {
   ErrorResponse,
 } from "@/entities/enrollment";
 import { http, HttpResponse, delay } from "msw";
+import coursesData from "./mock-data/courses.json";
 
 const categories = ["development", "design", "marketing", "business"];
 
-const courses: Course[] = [
-  {
-    id: "course-1",
-    title: "React 완벽 가이드",
-    description: "React의 기초부터 고급 패턴까지 완벽하게 학습합니다.",
-    category: "development",
-    price: 150000,
-    maxCapacity: 30,
-    currentEnrollment: 25,
-    startDate: "2024-05-01",
-    endDate: "2024-05-31",
-    instructor: "김민수",
-    thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-2",
-    title: "TypeScript 마스터 클래스",
-    description: "TypeScript의 타입 시스템을 깊이 있게 이해합니다.",
-    category: "development",
-    price: 180000,
-    maxCapacity: 25,
-    currentEnrollment: 20,
-    startDate: "2024-06-01",
-    endDate: "2024-06-30",
-    instructor: "박지현",
-    thumbnail: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-3",
-    title: "UI/UX 디자인 기초",
-    description: "사용자 중심 디자인의 기본 원칙부터 학습합니다.",
-    category: "design",
-    price: 200000,
-    maxCapacity: 20,
-    currentEnrollment: 8,
-    startDate: "2024-05-15",
-    endDate: "2024-06-15",
-    instructor: "이서연",
-    thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-4",
-    title: "Figma 실무 활용",
-    description: "Figma를 활용한 디자인 시스템 구축과 협업 워크플로우.",
-    category: "design",
-    price: 160000,
-    maxCapacity: 25,
-    currentEnrollment: 23,
-    startDate: "2024-07-01",
-    endDate: "2024-07-31",
-    instructor: "최준호",
-    thumbnail: "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-5",
-    title: "디지털 마케팅 전략",
-    description: "퍼포먼스 마케팅부터 브랜딩까지.",
-    category: "marketing",
-    price: 220000,
-    maxCapacity: 40,
-    currentEnrollment: 35,
-    startDate: "2024-05-10",
-    endDate: "2024-06-10",
-    instructor: "정미래",
-    thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-6",
-    title: "콘텐츠 마케팅 실전",
-    description: "효과적인 콘텐츠 기획과 제작.",
-    category: "marketing",
-    price: 170000,
-    maxCapacity: 30,
-    currentEnrollment: 12,
-    startDate: "2024-08-01",
-    endDate: "2024-08-31",
-    instructor: "강다은",
-    thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-7",
-    title: "스타트업 비즈니스 모델",
-    description: "스타트업의 비즈니스 모델 설계와 검증.",
-    category: "business",
-    price: 250000,
-    maxCapacity: 20,
-    currentEnrollment: 5,
-    startDate: "2024-06-15",
-    endDate: "2024-07-15",
-    instructor: "송재현",
-    thumbnail: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400&h=225&fit=crop",
-  },
-  {
-    id: "course-8",
-    title: "리더십과 팀 빌딩",
-    description: "효과적인 리더십 발휘와 팀 구성.",
-    category: "business",
-    price: 280000,
-    maxCapacity: 25,
-    currentEnrollment: 18,
-    startDate: "2024-09-01",
-    endDate: "2024-09-30",
-    instructor: "윤상훈",
-    thumbnail: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=225&fit=crop",
-  },
-];
+// Type assertion for JSON data
+const courses = coursesData.courses as Course[];
 
 // In-memory store for enrollment tracking (email:courseId)
 const enrollments = new Set<string>();
@@ -146,7 +43,7 @@ function validateEnrollmentRequest(body: EnrollmentRequest): ErrorResponse | nul
   // Check group info for group enrollment
   if (body.type === "group") {
     if (!body.group.organizationName?.trim()) {
-      errors["group.organizationName"] = "단첼명을 입력해주세요";
+      errors["group.organizationName"] = "단체명을 입력해주세요";
     }
     if (!body.group.contactPerson?.trim()) {
       errors["group.contactPerson"] = "담당자 연락처를 입력해주세요";
