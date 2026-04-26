@@ -257,8 +257,8 @@ class ApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("정원 초과 시 신청 거부")
-        fun `capacity full rejects enrollment`() {
+        @DisplayName("정원 초과 시 대기열 등록")
+        fun `capacity full joins waitlist`() {
             val fullCourseId = createCourseWithCapacity(creatorToken, "소규모강의", 1)
             openCourse(fullCourseId, creatorToken)
 
@@ -267,10 +267,12 @@ class ApiIntegrationTest {
 
             mockMvc.postWithAuth("/api/enrollments", body, mate1Token)
                 .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.status").value("pending"))
 
             val mate2Token = signupAndLogin("mate2@test.com", "수강생2")
             mockMvc.postWithAuth("/api/enrollments", body, mate2Token)
-                .andExpect(status().isBadRequest)
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.status").value("waitlist"))
         }
 
         @Test

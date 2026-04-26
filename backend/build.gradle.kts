@@ -12,7 +12,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(17) // Kotlin 2.0.21 호환성
   }
 }
 
@@ -48,6 +48,7 @@ dependencies {
   // Test
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.springframework.security:spring-security-test")
+  testImplementation("com.ninja-squad:springmockk:4.0.2") // MockK for Spring
   testRuntimeOnly("com.h2database:h2")
 }
 
@@ -58,7 +59,7 @@ tasks.withType<Test> {
 kotlin {
   compilerOptions {
     freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 // Kotlin 2.0.21은 JVM 17까지만 지원
   }
 }
 
