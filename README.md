@@ -63,12 +63,28 @@ cp .env.example .env
 | `DB_USERNAME` / `DB_PASSWORD` | MySQL 인증 정보 | `root` / `password` |
 | `JWT_SECRET` | JWT 서명용 비밀 키 | `change-me-in-production` |
 
+## 문서
+
+| 문서 | 설명 | 링크 |
+|------|------|------|
+| **Frontend Architecture** | FSD 아키텍처, 상태 관리, 다단계 폼 구조 | [frontend/docs/ARCHITECTURE.md](frontend/docs/ARCHITECTURE.md) |
+| **Frontend Development** | 개발 환경 설정, 로컬 실행, 디버깅, 테스트 | [frontend/docs/DEVELOPMENT.md](frontend/docs/DEVELOPMENT.md) |
+| **Frontend PRD** | 제품 요구사항, 사용자 스토리, 기능 명세 | [frontend/docs/PRD.md](frontend/docs/PRD.md) |
+| **Frontend Security** | XSS 방지, 인증, CSRF, PII 처리 | [frontend/docs/SECURITY.md](frontend/docs/SECURITY.md) |
+| **Frontend Mock API** | MSW Mock 서버 API 명세, 요청/응답 예시 | [frontend/docs/MOCK_API.md](frontend/docs/MOCK_API.md) |
+| **Backend Architecture** | 계층형 아키텍처, ERD, API 설계 | [backend/docs/ARCHITECTURE.md](backend/docs/ARCHITECTURE.md) |
+| **Backend API** | REST API 명세, 요청/응답 예시, 에러 코드 | [backend/docs/API.md](backend/docs/API.md) |
+| **Backend Development** | 개발 환경 설정, 빌드, 테스트, 디버깅 | [backend/docs/DEVELOPMENT.md](backend/docs/DEVELOPMENT.md) |
+| **Backend Security** | JWT, Spring Security, 권한 제어, 보안 조치 | [backend/docs/SECURITY.md](backend/docs/SECURITY.md) |
+| **Backend Sequence Diagrams** | 시퀀스 다이어그램 (인증, 수강신청, 동시성제어) | [backend/docs/SEQUENCE_DIAGRAMS.md](backend/docs/SEQUENCE_DIAGRAMS.md) |
+| **Backend Infrastructure** | 인프라 구조, 배포 전략, 모니터링, CI/CD | [backend/docs/INFRASTRUCTURE.md](backend/docs/INFRASTRUCTURE.md) |
+
 ## 요구사항 해석 및 가정
 
 1. **풀스택 과제**: 프론트엔드와 백엔드가 분리된 구조이며, REST API로 통신합니다.
-2. **인증 필요**: Spring Security와 JWT를 기반으로 한 인증/인가를 가정하고 설정했습니다.
+2. **인증 필요**: Spring Security와 JWT를 기반으로 한 인증/인가를 구현했습니다.
 3. **데이터베이스**: 관계형 데이터베이스(MySQL)를 사용하며, JPA를 통해 도메인 모델을 관리합니다.
-4. **API 문서화**: Swagger/OpenAPI를 활용하여 API 명세를 시각적으로 확인할 수 있도록 가정했습니다.
+4. **API 문서화**: Swagger/OpenAPI를 활용하여 API 명세를 시각적으로 확인할 수 있습니다.
 5. **프론트엔드 라우팅**: Next.js App Router를 사용하며, `/api/*` 요청은 백엔드로 리버스 프록시됩니다.
 
 ## 설계 결정과 이유
@@ -102,15 +118,38 @@ cp .env.example .env
 
 - **이유**: Push / PR 시 자동으로 Lint, Build, Test를 수행하여 코드 품질을 사전에 검증합니다.
 
-## 미구현 / 제약사항
+## 선택적 구현 항목
 
-- **도메인 로직 미구현**: 현재 `domain`, `controller`, `service`, `repository`, `dto` 패키지는 비어 있거나 `.gitkeep` 상태입니다. 실제 비즈니스 요구사항에 따라 엔티티와 API를 구현해야 합니다.
-- **JWT 인증 미완성**: `SecurityConfig`와 `JWT_SECRET` 환경 변수는 설정되어 있으나, 실제 JWT 발급/검증 필터 및 로그인 엔드포인트는 구현되지 않았습니다.
-- **프론트엔드 페이지 미구현**: FSD 폴더 구조만 잡혀 있으며, 실제 UI 컴포넌트와 페이지는 작성되지 않았습니다.
-- **테스트 커버리지**: 현재는 Spring Boot 기본 테스트만 존재하며, 도메인 단위 테스트가 없습니다.
+- **sessionStorage 임시 저장**: 수강 신청 폼에서 브라우저 탭을 닫으면 자동으로 데이터가 삭제되는 임시 저장 기능을 구현했습니다.
+- **비관적 락(Pessimistic Lock)**: 수강 신청 시 정원 초과를 방지하기 위해 `@Lock(LockModeType.PESSIMISTIC_WRITE)`를 적용했습니다.
+- **MSW(Mock Service Worker)**: 프론트엔드 개발 시 백엔드 없이 테스트 가능한 Mock 서버를 구현했습니다.
+
+## 제약사항
+
+- **대기열(Waitlist) 기능**: 정원 초과 시 대기열 기능은 구현되지 않았습니다.
+- **Rate Limiting**: API 요청 속도 제한 기능은 구현되지 않았습니다.
 - **운환경 설정**: `application-prod.yml` 및 배포 스크립트는 존재하지 않습니다. 현재는 `dev` 프로파일만 제공됩니다.
 
 ## AI 활용 범위
 
-- **프로젝트 구조 및 보일러플레이트 생성**: AI를 활용하여 초기 설정, Docker Compose, CI/CD 워크플로우 등을 생성했습니다.
-- **문서 작성**: 본 README의 초안 및 프로젝트 관련 문서 작성에 AI를 활용했습니다.
+AI는 **보조적인 역할**로만 활용했습니다. 모든 핵심 코드와 비즈니스 로직은 직접 작성했습니다.
+
+### AI 활용 영역 (보조 역할)
+
+- **문서 초안 작성**: 기본 틀 작성 → 내용 검토 및 수정
+- **코드 리팩토링 제안**: 리팩토링 아이디어 제시 → 직접 판단 후 적용
+- **보안 검토 제안**: 취약점 식별 → 수정 방향 결정 후 직접 수정
+
+### 직접 구현 (사용자 작성)
+
+- **핵심 비즈니스 로직**: 수강 신청, 다단계 폼, 정원 관리
+- **아키텍처 설계**: FSD 적용, 상태 관리, API 통신
+- **데이터 유효성 검증**: Zod 스키마, 폼 검증 로직
+- **UI/UX 구현**: 반응형 레이아웃, 이탈 방지, 에러 처리
+- **보안 조치**: JWT 인증, 권한 제어, 동시성 제어
+
+### 원칙
+
+- **AI 제안 사용자 검증**: 모든 AI 제안은 직접 검토 후 승인된 것만 적용
+- **코드 이해 필수**: AI가 생성한 코드라도 라인별로 이해하고 수정
+- **직접 실행 및 테스트**: 모든 코드가 실제로 동작하는지 직접 확인
