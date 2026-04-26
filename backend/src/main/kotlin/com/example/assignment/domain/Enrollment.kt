@@ -45,4 +45,5 @@ enum class EnrollmentStatus {
     PENDING,
     CONFIRMED,
     CANCELLED,
+    WAITLIST, // 대기열
 }

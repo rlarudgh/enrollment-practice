@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -85,9 +86,17 @@ class EnrollmentController(
             ),
         ]
     )
-    fun getMyEnrollments(authentication: Authentication?): ResponseEntity<List<EnrollmentDetailResponse>> {
+    fun getMyEnrollments(
+        authentication: Authentication?,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false, defaultValue = "10") size: Int,
+    ): ResponseEntity<Any> {
         val userId = extractUserId(authentication)
-        return ResponseEntity.ok(enrollmentService.getMyEnrollments(userId))
+        return if (page != null) {
+            ResponseEntity.ok(enrollmentService.getMyEnrollments(userId, page, size))
+        } else {
+            ResponseEntity.ok(enrollmentService.getMyEnrollments(userId))
+        }
     }
 
     @PatchMapping("/{id}/confirm")
@@ -166,6 +175,101 @@ class EnrollmentController(
     ): ResponseEntity<EnrollmentResponse> {
         val userId = extractUserId(authentication)
         return ResponseEntity.ok(enrollmentService.cancelEnrollment(id, userId))
+    }
+
+    @GetMapping("/waitlist/{courseId}")
+    @Operation(summary = "강의 대기열 조회")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "대기열 조회 성공",
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자",
+                content = [Content(examples = [ExampleObject(value = """{"status":401,"message":"로그인이 필요합니다"}""")])],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "강의를 찾을 수 없음",
+                content = [Content(examples = [ExampleObject(value = """{"status":404,"message":"강의를 찾을 수 없습니다"}""")])],
+            ),
+        ]
+    )
+    fun getWaitlist(
+        @PathVariable courseId: Long,
+        authentication: Authentication?,
+    ): ResponseEntity<List<EnrollmentDetailResponse>> {
+        extractUserId(authentication)
+        return ResponseEntity.ok(enrollmentService.getWaitlist(courseId))
+    }
+
+    @PatchMapping("/waitlist/{id}/promote")
+    @Operation(summary = "대기열 수동 승격")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "대기열 승격 성공",
+                content = [Content(schema = Schema(implementation = EnrollmentResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "대기열 상태가 아니거나 정원 초과",
+                content = [Content(examples = [ExampleObject(value = """{"status":400,"message":"정원이 여전히 초과되어 확정할 수 없습니다"}""")])],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자",
+                content = [Content(examples = [ExampleObject(value = """{"status":401,"message":"로그인이 필요합니다"}""")])],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "본인의 강의만 대기자를 확정할 수 있음",
+                content = [Content(examples = [ExampleObject(value = """{"status":403,"message":"본인의 강의만 대기자를 확정할 수 있습니다"}""")])],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "수강 신청을 찾을 수 없음",
+                content = [Content(examples = [ExampleObject(value = """{"status":404,"message":"수강 신청을 찾을 수 없습니다"}""")])],
+            ),
+        ]
+    )
+    fun promoteWaitlist(
+        @PathVariable id: Long,
+        authentication: Authentication?,
+    ): ResponseEntity<EnrollmentResponse> {
+        val instructorId = extractUserId(authentication)
+        return ResponseEntity.ok(enrollmentService.promoteWaitlistToConfirmed(id, instructorId))
+    }
+
+    @PostMapping("/waitlist/{courseId}/auto-promote")
+    @Operation(summary = "대기열 자동 승격")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "대기열 자동 승격 성공",
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자",
+                content = [Content(examples = [ExampleObject(value = """{"status":401,"message":"로그인이 필요합니다"}""")])],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "강의를 찾을 수 없음",
+                content = [Content(examples = [ExampleObject(value = """{"status":404,"message":"강의를 찾을 수 없습니다"}""")])],
+            ),
+        ]
+    )
+    fun autoPromoteWaitlist(
+        @PathVariable courseId: Long,
+        authentication: Authentication?,
+    ): ResponseEntity<List<EnrollmentDetailResponse>> {
+        extractUserId(authentication)
+        return ResponseEntity.ok(enrollmentService.autoPromoteWaitlist(courseId))
     }
 
     private fun extractUserId(authentication: Authentication?): Long {
