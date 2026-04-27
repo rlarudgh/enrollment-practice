@@ -61,7 +61,7 @@ export const Link: Story = {
   },
 };
 
-export const AllVariants: Story = {
+export const AllVariants = {
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Badge>Default</Badge>

@@ -23,7 +23,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Default= {
   render: () => (
     <Card className="w-80">
       <CardHeader>
@@ -40,7 +40,7 @@ export const Default: Story = {
   ),
 };
 
-export const Small: Story = {
+export const Small= {
   render: () => (
     <Card size="sm" className="w-72">
       <CardHeader>
@@ -54,7 +54,7 @@ export const Small: Story = {
   ),
 };
 
-export const WithAction: Story = {
+export const WithAction= {
   render: () => (
     <Card className="w-80">
       <CardHeader>
@@ -73,7 +73,7 @@ export const WithAction: Story = {
   ),
 };
 
-export const ContentOnly: Story = {
+export const ContentOnly= {
   render: () => (
     <Card className="w-80">
       <CardContent>

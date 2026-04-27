@@ -61,7 +61,7 @@ export const WithValue: Story = {
   },
 };
 
-export const AllTypes: Story = {
+export const AllTypes = {
   render: () => (
     <div className="flex flex-col gap-4 w-80">
       <Input type="text" placeholder="Text input" />

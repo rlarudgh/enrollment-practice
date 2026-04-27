@@ -21,7 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Default= {
   render: () => (
     <Alert className="w-96">
       <AlertTitle>Heads up!</AlertTitle>
@@ -30,7 +30,7 @@ export const Default: Story = {
   ),
 };
 
-export const Destructive: Story = {
+export const Destructive= {
   render: () => (
     <Alert variant="destructive" className="w-96">
       <AlertCircle className="size-4" />
@@ -40,7 +40,7 @@ export const Destructive: Story = {
   ),
 };
 
-export const WithIcon: Story = {
+export const WithIcon= {
   render: () => (
     <Alert className="w-96">
       <AlertCircle className="size-4" />
@@ -50,7 +50,7 @@ export const WithIcon: Story = {
   ),
 };
 
-export const WithAction: Story = {
+export const WithAction= {
   render: () => (
     <Alert className="w-96">
       <AlertTitle>Update available</AlertTitle>

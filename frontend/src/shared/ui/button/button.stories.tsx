@@ -89,7 +89,7 @@ export const Disabled: Story = {
   },
 };
 
-export const AllVariants: Story = {
+export const AllVariants = {
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button>Default</Button>
@@ -102,7 +102,7 @@ export const AllVariants: Story = {
   ),
 };
 
-export const AllSizes: Story = {
+export const AllSizes = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
       <Button size="xs">Extra Small</Button>

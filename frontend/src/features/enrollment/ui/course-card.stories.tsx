@@ -92,7 +92,7 @@ export const NoThumbnail: Story = {
   },
 };
 
-export const Grid: Story = {
+export const Grid = {
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
       <CourseCard course={mockCourse} isSelected={false} onSelect={() => {}} />

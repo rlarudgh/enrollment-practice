@@ -45,7 +45,7 @@ export const Step3: Story = {
   },
 };
 
-export const AllSteps: Story = {
+export const AllSteps = {
   render: () => (
     <div className="flex flex-col gap-8 w-full max-w-lg">
       <StepIndicator currentStep={1} totalSteps={3} stepLabels={["강의 선택", "신청자 정보", "신청 완료"]} />
