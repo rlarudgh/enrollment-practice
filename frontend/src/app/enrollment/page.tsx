@@ -14,9 +14,14 @@ import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { AlertCircle, Shield } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 const STEPS = ["강의 선택", "정보 입력", "확인 및 제출"];
+const STEP_DESCRIPTIONS = [
+  "수강할 강의와 신청 유형을 선택해 주세요.",
+  "신청자 정보를 입력해 주세요.",
+  "입력하신 정보를 확인하고 제출해 주세요.",
+];
 
 const handleAdminRedirect = () => {
   window.location.href = "/admin";
@@ -41,6 +46,16 @@ function EnrollmentContent() {
   const { hasRole } = useAuth();
   const submitEnrollment = useSubmitEnrollment();
 
+  const handleReset = useCallback(
+    () => form.handleReset(setFormData, clearDraft),
+    [form, setFormData, clearDraft],
+  );
+
+  const handleSubmit = useCallback(
+    () => form.handleSubmit(formData, clearDraft),
+    [form, formData, clearDraft],
+  );
+
   // Prevent leaving with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -60,7 +75,7 @@ function EnrollmentContent() {
           response={form.submitSuccess}
           formData={formData}
           course={course || null}
-          onReset={() => form.handleReset(setFormData, clearDraft)}
+          onReset={handleReset}
         />
       </div>
     );
@@ -112,33 +127,27 @@ function EnrollmentContent() {
         <CardHeader>
           <CardTitle>{STEPS[form.currentStep - 1]}</CardTitle>
           <CardDescription>
-            {form.currentStep === 1 && "수강할 강의와 신청 유형을 선택해 주세요."}
-            {form.currentStep === 2 && "신청자 정보를 입력해 주세요."}
-            {form.currentStep === 3 && "입력하신 정보를 확인하고 제출해 주세요."}
+            {STEP_DESCRIPTIONS[form.currentStep - 1]}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {form.currentStep === 1 && (
+          {form.currentStep === 1 ? (
             <Step1CourseSelection
               initialData={{ courseId: formData.courseId, type: formData.type }}
               onNext={(data) => form.handleStep1Next(formData, setFormData, data)}
             />
-          )}
-
-          {form.currentStep === 2 && (
+          ) : form.currentStep === 2 ? (
             <Step2ApplicantInfo
               type={formData.type}
               initialData={{ applicant: formData.applicant, group: formData.group }}
               onNext={(data) => form.handleStep2Next(setFormData, data)}
               onPrev={form.handleStep2Prev}
             />
-          )}
-
-          {form.currentStep === 3 && (
+          ) : (
             <Step3ReviewSubmit
               formData={formData}
               course={course || null}
-              onSubmit={() => form.handleSubmit(formData, clearDraft)}
+              onSubmit={handleSubmit}
               onPrev={form.handleStep3Prev}
               onEditStep={form.handleEditStep}
               loading={submitEnrollment.isPending}

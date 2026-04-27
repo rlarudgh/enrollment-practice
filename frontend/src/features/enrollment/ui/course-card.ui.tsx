@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Calendar, Check, CreditCard, Users } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface CourseCardProps {
   course: Course;
@@ -25,18 +26,26 @@ const categoryLabels: Record<string, string> = {
   business: "비즈니스",
 };
 
-export function CourseCard({ course, isSelected, onSelect }: CourseCardProps) {
+export const CourseCard = memo(function CourseCard({ course, isSelected, onSelect }: CourseCardProps) {
   const isFull = course.currentEnrollment >= course.maxCapacity;
   const capacityPercentage = (course.currentEnrollment / course.maxCapacity) * 100;
   const isAlmostFull = capacityPercentage >= 80 && !isFull;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const formattedDates = useMemo(
+    () => ({
+      start: new Date(course.startDate).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      end: new Date(course.endDate).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    }),
+    [course.startDate, course.endDate],
+  );
 
   const formatPrice = (price: number) => `${price.toLocaleString("ko-KR")}원`;
 
@@ -49,25 +58,24 @@ export function CourseCard({ course, isSelected, onSelect }: CourseCardProps) {
       )}
       onClick={() => !isFull && onSelect()}
     >
-      {course.thumbnail && (
+      {course.thumbnail ? (
         <div className="relative h-40 overflow-hidden">
           <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-          {isFull && (
+          {isFull ? (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <Badge variant="destructive" className="text-lg px-3 py-1">
                 정원 마감
               </Badge>
             </div>
-          )}
-          {isAlmostFull && (
+          ) : isAlmostFull ? (
             <div className="absolute top-2 right-2">
               <Badge variant="secondary" className="bg-amber-500 text-white">
                 마감 임박
               </Badge>
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
       <CardHeader className="pb-2">
         <Badge variant="secondary" className="w-fit mb-2">
           {categoryLabels[course.category] || course.category}
@@ -78,7 +86,7 @@ export function CourseCard({ course, isSelected, onSelect }: CourseCardProps) {
       <CardContent className="space-y-3">
         <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="w-4 h-4 mr-2" />
-          {formatDate(course.startDate)} ~ {formatDate(course.endDate)}
+          {formattedDates.start} ~ {formattedDates.end}
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <Users className="w-4 h-4 mr-2" />
@@ -114,4 +122,4 @@ export function CourseCard({ course, isSelected, onSelect }: CourseCardProps) {
       </CardFooter>
     </Card>
   );
-}
+});
